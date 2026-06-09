@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>9班巨星爭霸戰：MVP 與舞台傳奇 (V3.0 心理學動機優化版)</title>
+    <title>9班巨星爭霸戰：MVP 與舞台傳奇 (V3.5 雲端即時同步版)</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
     <style>
         :root { --primary: #e11d48; --success: #0d9488; --danger: #ea580c; --warning: #eab308; --bg-dark: #0f172a; --text-main: #1e293b; --gacha: #8b5cf6; --title-bg: #1e1b4b; --territory: #2563eb; --psychology: #0284c7; }
@@ -37,7 +40,6 @@
         .btn-purple { background: var(--gacha); color: white; }
         .btn-blue { background: var(--psychology); color: white; }
         
-        /* 學生網格與卡片 */
         .student-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
         .student-card { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px; position: relative; transition: all 0.3s; cursor: pointer; }
         .student-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.05); }
@@ -46,7 +48,6 @@
         .student-name { font-weight: bold; font-size: 15px; color: #0f172a; }
         .student-team { font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
         
-        /* 五個組別底色樣式 */
         .team-bg-A { background: #fee2e2; border-color: #fca5a5; }
         .team-bg-B { background: #dbeafe; border-color: #bfdbfe; }
         .team-bg-C { background: #fef9c3; border-color: #fef08a; }
@@ -68,14 +69,12 @@
         .status-row { display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px; color: #475569; }
         .status-badge { display: flex; align-items: center; gap: 2px; }
 
-        /* 天氣與魔王看板 */
         .weather-banner { background: linear-gradient(135deg, #1e1b4b, #312e81); color: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         .boss-showcase { background: linear-gradient(135deg, #450a0a, #7f1d1d); color: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; display: flex; gap: 20px; align-items: center; border: 3px solid #b91c1c; transition: transform 0.1s; }
         .boss-hp-bar { background: #450a0a; border-radius: 999px; height: 22px; overflow: hidden; margin-top: 8px; border: 1px solid #f87171; position: relative; width: 100%; }
         .boss-hp-fill { background: linear-gradient(90deg, #ef4444, #b91c1c); height: 100%; width: 100%; transition: width 0.3s; }
         .boss-hp-text { position: absolute; width: 100%; text-align: center; font-size: 12px; font-weight: bold; line-height: 20px; color: white; text-shadow: 1px 1px 2px black; }
 
-        /* 特效動畫 */
         @keyframes shakeEffect {
             0% { transform: translate(2px, 1px) rotate(0deg); }
             10% { transform: translate(-1px, -2px) rotate(-1deg); }
@@ -91,7 +90,6 @@
         }
         .shake-active { animation: shakeEffect 0.4s ease-in-out; }
 
-        /* 排行榜與領地 */
         .rank-tabs { display: flex; gap: 4px; margin-bottom: 10px; background: #f1f5f9; padding: 4px; border-radius: 6px; }
         .rank-tab-btn { flex: 1; padding: 6px; border: none; background: transparent; cursor: pointer; font-size: 12px; font-weight: bold; color: #64748b; border-radius: 4px; }
         .rank-tab-btn.active { background: white; color: var(--title-bg); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -109,7 +107,6 @@
         .form-control { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 8px; font-size: 14px; color: #0f172a; background: #fff; }
         .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-        /* 學生載具端專用介面 */
         .tablet-container { max-width: 550px; margin: 10px auto; padding: 15px; }
         .tablet-header { background: linear-gradient(135deg, #1e1b4b, #312e81); color: white; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; }
         .seat-btn-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1; }
@@ -122,7 +119,6 @@
         .action-card:hover { border-color: var(--primary); background: #fff1f2; transform: translateY(-2px); }
         .action-card i { font-size: 26px; margin-bottom: 6px; color: var(--primary); }
 
-        /* 圖鑑區樣式 */
         .book-filter-tabs { display: flex; gap: 6px; margin-bottom: 15px; }
         .book-filter-btn { flex: 1; border: 1px solid #cbd5e1; padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer; background: white; text-align: center; }
         .book-filter-btn.active { background: #1e1b4b; color: white; border-color: #1e1b4b; }
@@ -135,7 +131,6 @@
         .pet-switch-select { width: 100%; padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1; font-size: 11px; color: #475569; background: #fff; cursor: pointer; margin-top: 4px; font-weight: bold; text-align-last: center; }
         .pet-switch-select:focus { border-color: var(--primary); outline: none; }
 
-        /* 心理學優化 UI 樣式 */
         .pool-badge { font-size: 12px; padding: 4px 10px; border-radius: 20px; font-weight: bold; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; display: inline-flex; align-items: center; gap: 4px; }
         .achievement-badge { font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; font-weight: 500; display: inline-flex; align-items: center; gap: 3px; }
         .achievement-badge.unlocked { background: #fef9c3; color: #854d0e; border-color: #fef08a; }
@@ -145,7 +140,7 @@
 <body>
 
     <nav class="navbar" id="topNavbar">
-        <div class="nav-logo"><i class="fa-solid fa-gamepad"></i> 9班巨星爭霸戰 (V3.0 安全防護版)</div>
+        <div class="nav-logo"><i class="fa-solid fa-gamepad"></i> 9班巨星爭霸戰 (V3.5 雲端即時同步版)</div>
         <div class="nav-tabs" id="navTabsContainer">
             <button class="tab-btn active" id="nav-dashboard-btn" onclick="switchTab('dashboard')"><i class="fa-solid fa-chalkboard-user"></i> 大屏主控台</button>
             <button class="tab-btn" id="nav-tablet-btn" onclick="switchTab('tablet')"><i class="fa-solid fa-tablet-screen-button"></i> 學生載具端</button>
@@ -278,7 +273,7 @@
             </div>
 
             <div class="card">
-                <div class="card-title" style="color:#2563eb;"><i class="fa-solid fa-users-gear"></i> 自訂五小組成員座號 與 星能共享水槽 (合作互助機制)</div>
+                <div class="card-title" style="color:#2563eb;"><i class="fa-solid fa-users-gear"></i> 自訂五小組成員座號 與 星能共享水槽</div>
                 <div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:10px;">
                     <div class="team-bg-A" style="padding:8px; border-radius:6px; border:1px solid;">
                         <div style="display:flex; justify-content:between; align-items:center;">
@@ -386,7 +381,6 @@
                 </div>
 
                 <div class="seat-btn-grid" id="tabletSeatGrid"></div>
-
                 <div id="tabletMainArea" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:15px; min-height:200px;"></div>
             </div>
         </div>
@@ -420,8 +414,27 @@
     </div>
 
     <script>
-        const TEAM_NAMES = { 'A': '紅蓮組', 'B': '蒼藍組', 'C': '閃耀組', 'D': '翡翠組', 'E': '星空組' };
+        // ----------------------------------------------------
+        // 🌟 FIREBASE 雲端資料庫初始化區
+        // ----------------------------------------------------
         
+        // 🛠️ 請在此處替換成您在 Firebase 申請的 config 內容
+const firebaseConfig = {
+  apiKey: "AIzaSyB9Grch2xnz1IAqsRKntOykoIZowYTaThw",
+  authDomain: "class9-game.firebaseapp.com",
+  databaseURL: "https://class9-game-default-rtdb.firebaseio.com",
+  projectId: "class9-game",
+  storageBucket: "class9-game.firebasestorage.app",
+  messagingSenderId: "536289413152",
+  appId: "1:536289413152:web:76f6bee2ac8755889e1445",
+  measurementId: "G-DWMMM0TQL3"
+};
+        
+        // 初始化 Firebase
+        firebase.initializeApp(firebaseConfig);
+        const dbRef = firebase.database().ref("game_session_v3_5");
+
+        const TEAM_NAMES = { 'A': '紅蓮組', 'B': '蒼藍組', 'C': '閃耀組', 'D': '翡翠組', 'E': '星空組' };
         const PERSONALITY_DETAILS = {
             'none': { name: '尚未覺醒', color: '#64748b' },
             'hotblooded': { name: '💥 熱血 (打王威力+20%)', color: '#ef4444' },
@@ -434,7 +447,7 @@
         let currentRankTab = 'level';
         let currentActiveTabletSeat = null;
         let currentPokedexFilter = '全部';
-        let isStudentMode = false; // 🌟 權限控管變數：是否為學生安全防護模式
+        let isStudentMode = false;
 
         const DEFAULT_DATABASE = {
             weather: { id: 'sunny', name: '晴空萬里', icon: '☀️', effect: '今日加成：全屬性正常發揮。', attr: 'none' },
@@ -456,19 +469,16 @@
             'fire_3': { id: 'fire_3', name: '業火烈焰龍', type: '火', emoji: '🦖', stage: '第三階 高階', desc: '掌控地心核心熱能的亞龍，雙爪揮舞間地裂山崩。', next: 'fire_4' },
             'fire_4': { id: 'fire_4', name: '不死涅槃鳳', type: '火', emoji: '🦅', stage: '第四階 究極神獸', desc: '於不死火山中心涅槃重生的神鳥，火焰帶有神聖的淨化之力。', next: 'fire_5' },
             'fire_5': { id: 'fire_5', name: '滅世星煌朱雀', type: '火', emoji: '🐦', stage: '第五階 終極神話', desc: '火系最終極神話形態，雙翼展開時化為焚天星火，能燃盡世間邪惡。', next: null },
-
             'water_1': { id: 'water_1', name: '泡泡海豹', type: '水', emoji: '🦭', stage: '第一階 初階', desc: '能夠吐出充滿星能的治癒泡泡，性情極度溫馴。', next: 'water_2' },
             'water_2': { id: 'water_2', name: '狂濤巨浪犬', type: '水', emoji: '🐕', stage: '第二階 中階', desc: '步伐敏捷的水中戰士，可以在海面上如疾風般奔跑。', next: 'water_3' },
             'water_3': { id: 'water_3', name: '九霄裂浪鯊', type: '水', emoji: '🦈', stage: '第三階 高階', desc: '利齒能撕裂重重海浪的猛獸，是近海海域的絕對霸主。', next: 'water_4' },
             'water_4': { id: 'water_4', name: '滄海幻獸鯤', type: '水', emoji: '🐋', stage: '第四階 究極神獸', desc: '體型大如島嶼的遠古神獸，其呼吸能引發大洋海嘯與暴風雨。', next: 'water_5' },
             'water_5': { id: 'water_5', name: '天尊玄冥真武', type: '水', emoji: '🐢', stage: '第五階 終極神話', desc: '制霸深海與藍天的終極巨獸，擁有扭轉時間與撕裂乾坤的極致威力。', next: null },
-
             'grass_1': { id: 'grass_1', name: '嫩芽樹懶', type: '木', emoji: '🦥', stage: '第一階 初階', desc: '頭頂上長著幸運草的慵懶精靈，非常喜歡吸收日光。', next: 'grass_2' },
             'grass_2': { id: 'grass_2', name: '荊棘林鹿', type: '木', emoji: '🦌', stage: '第二階 中階', desc: '鹿角由千年古木化成，奔跑過的地方都會開滿鮮花。', next: 'grass_3' },
             'grass_3': { id: 'grass_3', name: '百花幻靈狐', type: '木', emoji: '🦊', stage: '第三階 高階', desc: '能幻化出漫天花瓣迷宮的靈狐，性情機警且親近大自然。', next: 'grass_4' },
             'grass_4': { id: 'grass_4', name: '萬物甦醒皇', type: '木', emoji: '🌳', stage: '第四階 究極神獸', desc: '古老森林的巍峨守護神，一聲咆哮能讓枯木逢春、大地回生。', next: 'grass_5' },
             'grass_5': { id: 'grass_5', name: '神聖太初青龍', type: '木', emoji: '🐉', stage: '第五階 終極神話', desc: '木系最高位神話生命體，執掌宇宙東方星宿，生生不息、恩澤萬物。', next: null },
-
             'light_1': { id: 'light_1', name: '閃電松鼠', type: '光', emoji: '🐿️', stage: '第一階 初階', desc: '尾巴能儲存微小電流，生氣時會發出霹靂啪啦的火花。', next: 'light_2' },
             'light_2': { id: 'light_2', name: '光輝獨角獸', type: '光', emoji: '🦄', stage: '第二階 中階', desc: '神聖的森林使者，頭上的角發出的強光可以驅散黑暗。', next: 'light_3' },
             'light_3': { id: 'light_3', name: '迅雷金剛猿', type: '光', emoji: '🦍', stage: '第三階 高階', desc: '軀體堅如磐石並纏繞耀眼電光的巨猿，能徒手捕捉狂風暴雷。', next: 'light_4' },
@@ -486,27 +496,40 @@
         let selectedStudentIds = [];
         let qrcodesGenerated = false;
 
+        // 🌟 改為雲端監聽：只要雲端有資料變動，大螢幕和手機會「同時」收到並更新畫面
         function initDatabase() {
-            const savedData = localStorage.getItem('game_save_v3_0');
-            if (savedData) {
-                try { systemDatabase = JSON.parse(savedData); } catch (e) { systemDatabase = JSON.parse(JSON.stringify(DEFAULT_DATABASE)); }
-            } else { systemDatabase = JSON.parse(JSON.stringify(DEFAULT_DATABASE)); }
-
-            if (!systemDatabase.teamPools) { systemDatabase.teamPools = { 'A': 0, 'B': 0, 'C': 0, 'D': 0, 'E': 0 }; }
-            if (!systemDatabase.students || systemDatabase.students.length === 0) { rebuildStudentListByConfig(); }
-            
-            systemDatabase.students.forEach(st => {
-                if (!st.petList) st.petList = st.pet ? [st.pet] : [];
-                if (!st.achievements) {
-                    st.achievements = { firstEvolve: false, bossHunter: false, topBreeder: false };
+            dbRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    systemDatabase = data;
+                } else {
+                    systemDatabase = JSON.parse(JSON.stringify(DEFAULT_DATABASE));
+                    rebuildStudentListByConfig();
+                    saveDatabase();
                 }
-                st.petList.forEach(p => { if (!p.personality) p.personality = 'none'; });
-                if (st.pet && !st.pet.personality) st.pet.personality = 'none';
-            });
 
-            Object.keys(systemDatabase.teamConfig).forEach(k => {
-                const input = document.getElementById(`cfg-team-${k}`);
-                if(input) input.value = systemDatabase.teamConfig[k];
+                // 資料安全性相容補丁
+                if (!systemDatabase.teamPools) { systemDatabase.teamPools = { 'A': 0, 'B': 0, 'C': 0, 'D': 0, 'E': 0 }; }
+                systemDatabase.students.forEach(st => {
+                    if (!st.petList) st.petList = st.pet ? [st.pet] : [];
+                    if (!st.achievements) st.achievements = { firstEvolve: false, bossHunter: false, topBreeder: false };
+                    st.petList.forEach(p => { if (!p.personality) p.personality = 'none'; });
+                    if (st.pet && !st.pet.personality) st.pet.personality = 'none';
+                });
+
+                Object.keys(systemDatabase.teamConfig).forEach(k => {
+                    const input = document.getElementById(`cfg-team-${k}`);
+                    if(input) input.value = systemDatabase.teamConfig[k];
+                });
+
+                // 重新渲染全部前端 UI
+                renderWeather();
+                renderBoss();
+                renderMainStudentGrid();
+                renderDynamicRankList();
+                renderTerritories();
+                renderTeamPoolsOnDashboard();
+                if(currentActiveTabletSeat) { renderTabletView(); }
             });
         }
 
@@ -533,7 +556,10 @@
             systemDatabase.students = newStudents;
         }
 
-        function saveDatabase() { localStorage.setItem('game_save_v3_0', JSON.stringify(systemDatabase)); }
+        // 🌟 核心變動：寫入雲端資料庫取代原本的 LocalStorage
+        function saveDatabase() { 
+            dbRef.set(systemDatabase); 
+        }
 
         function applyCustomTeamSettings() {
             playSoundEffect('victory');
@@ -542,47 +568,33 @@
             });
             rebuildStudentListByConfig();
             autoCalculateTerritories();
-            refreshAllUI();
+            saveDatabase();
             renderTabletSeatGrid();
-            if(currentActiveTabletSeat) { renderTabletView(); }
-            alert("✅ 小組成員與心理互助系統同步更新成功！");
+            alert("✅ 小組成員與雲端同步更新成功！");
         }
 
         function systemResetHard() {
-            if (confirm("⚠️ 確定要恢復初始狀態嗎？這會清除所有寵物、性格、晶石、小組水槽與自訂分組。")) {
-                localStorage.removeItem('game_save_v3_0');
+            if (confirm("⚠️ 確定要恢復初始狀態嗎？這會清除所有寵物、雲端水槽與所有操作數據。")) {
                 currentActiveTabletSeat = null;
-                initDatabase();
+                systemDatabase = JSON.parse(JSON.stringify(DEFAULT_DATABASE));
+                rebuildStudentListByConfig();
                 selectedStudentIds = [];
                 autoCalculateTerritories();
-                refreshAllUI();
+                saveDatabase();
                 renderTabletSeatGrid();
                 document.getElementById('tabletMainArea').innerHTML = `<p style='color:#64748b; text-align:center; padding-top:40px;'>請先在上方點擊您的座號以載入精靈介面</p>`;
-                alert("🔄 已成功全面恢復初始狀態數據！");
+                alert("🔄 雲端數據已成功全面清空重置！");
             }
         }
 
         function switchTab(tab) {
-            // 🌟 學生安全模式下限制切換別的選單
-            if (isStudentMode && tab !== 'tablet') {
-                return;
-            }
+            if (isStudentMode && tab !== 'tablet') return;
             playSoundEffect('click');
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
             const btn = document.getElementById(`nav-${tab}-btn`);
             if (btn) btn.classList.add('active');
             document.getElementById(`page-${tab}`).classList.add('active');
-        }
-
-        function refreshAllUI() {
-            renderWeather();
-            renderBoss();
-            renderMainStudentGrid();
-            renderDynamicRankList();
-            renderTerritories();
-            renderTeamPoolsOnDashboard();
-            saveDatabase();
         }
 
         function renderWeather() {
@@ -596,7 +608,7 @@
             playSoundEffect('click');
             const idx = WEATHER_LIST.findIndex(w => w.id === systemDatabase.weather.id);
             systemDatabase.weather = WEATHER_LIST[(idx + 1) % WEATHER_LIST.length];
-            refreshAllUI();
+            saveDatabase();
         }
 
         function renderBoss() {
@@ -617,6 +629,7 @@
 
         function renderMainStudentGrid() {
             const grid = document.getElementById('mainStudentGrid');
+            if(!grid) return;
             grid.innerHTML = '';
             systemDatabase.students.forEach(st => {
                 const isSelected = selectedStudentIds.includes(st.id);
@@ -681,8 +694,7 @@
                 confetti({ particleCount: 40 });
             }
             inputEl.value = score % 50;
-            refreshAllUI();
-            if(currentActiveTabletSeat) renderTabletView();
+            saveDatabase();
         }
 
         function giveBatchReward(type, amount) {
@@ -694,15 +706,13 @@
                 }
             });
             playSoundEffect('victory');
-            refreshAllUI();
-            if(currentActiveTabletSeat) renderTabletView();
+            saveDatabase();
         }
 
         function clearBatchActionStatus() {
             if (selectedStudentIds.length === 0) { alert("請選定對象！"); return; }
             systemDatabase.students.forEach(st => { if (selectedStudentIds.includes(st.id)) { st.hasActed = false; } });
-            refreshAllUI();
-            if(currentActiveTabletSeat) renderTabletView();
+            saveDatabase();
         }
 
         function changeRankTab(tab) {
@@ -715,6 +725,7 @@
 
         function renderDynamicRankList() {
             const list = document.getElementById('dynamicRankList');
+            if(!list) return;
             list.innerHTML = '';
             if (currentRankTab === 'level') {
                 const sorted = [...systemDatabase.students].sort((a,b)=> (b.pet?b.pet.level:0) - (a.pet?a.pet.level:0)).slice(0,5);
@@ -754,6 +765,7 @@
 
         function renderTerritories() {
             const grid = document.getElementById('territoryGrid');
+            if(!grid) return;
             grid.innerHTML = '';
             const tColors = { '紅蓮組': '#ef4444', '蒼藍組': '#3b82f6', '閃耀組': '#ca8a04', '翡翠組': '#22c55e', '星空組': '#a855f7', '暫無': '#cbd5e1' };
             systemDatabase.territories.forEach(t => {
@@ -781,6 +793,7 @@
 
         function renderPokedexGrid() {
             const container = document.getElementById('pokedexGridContainer');
+            if(!container) return;
             container.innerHTML = '';
             
             Object.keys(PET_DICTIONARY).forEach(key => {
@@ -810,6 +823,7 @@
 
         function renderTabletSeatGrid() {
             const grid = document.getElementById('tabletSeatGrid');
+            if(!grid) return;
             grid.innerHTML = '';
             systemDatabase.students.forEach(st => {
                 const isActive = (currentActiveTabletSeat === st.id);
@@ -818,10 +832,7 @@
         }
 
         function selectTabletSeat(id) {
-            // 🌟 學生模式下防鎖：如果已經帶了參數，就禁止點擊切換別人座號
-            if (isStudentMode && currentActiveTabletSeat !== null && currentActiveTabletSeat !== id) {
-                return;
-            }
+            if (isStudentMode && currentActiveTabletSeat !== null && currentActiveTabletSeat !== id) return;
             currentActiveTabletSeat = id;
             document.querySelectorAll('.seat-btn').forEach(b => b.classList.remove('active'));
             const targetBtn = document.getElementById(`seat-btn-${id}`);
@@ -831,6 +842,7 @@
 
         function renderTabletView() {
             const container = document.getElementById('tabletMainArea');
+            if(!container) return;
             if (!currentActiveTabletSeat) {
                 container.innerHTML = `<p style="color:#64748b; text-align:center; padding-top:40px;">💡 請先在上方點擊您的座號以載入精靈系統與扭蛋機</p>`;
                 return;
@@ -854,7 +866,7 @@
                         <span style="background:#166534; color:white; padding:1px 6px; border-radius:10px; font-weight:bold; font-size:11px;">庫存: ${teamPoolCount}</span>
                     </div>
                     <div style="display:flex; gap:6px;">
-                        <button class="btn btn-success" style="padding:4px 8px; font-size:11px; flex:1; justify-content:center; background:#166534;" onclick="donateToTeamPool(${student.id})">捐贈1晶石給小組</button>
+                        <button class="btn btn-success" style="padding:4px 8px; font-size:11px; flex:1; justify-content:center; background:#166534;" onclick="donateToTeamPool(${student.id})">捐贈1晶石给小組</button>
                         <button class="btn btn-blue" style="padding:4px 8px; font-size:11px; flex:1; justify-content:center; background:#0284c7;" ${teamPoolCount <= 0 ? 'disabled' : ''} onclick="withdrawFromTeamPool(${student.id})">從水槽提領1晶石</button>
                     </div>
                 </div>
@@ -879,7 +891,6 @@
             let gachaMachineHtml = `
                 <div style="background:linear-gradient(135deg, #6b21a8, #4a148c); color:white; border-radius:10px; padding:15px; text-align:center; margin-bottom:15px; border:2px solid #e9d5ff;">
                     <div style="font-size:20px; font-weight:bold; margin-bottom:2px;">🎰 星光精靈扭蛋機</div>
-                    <p style="font-size:11px; color:#e9d5ff; margin:0 0 10px 0;">花費 1 代幣隨機抽取基礎萌寵，絕不覆蓋包包內已有戰寵！</p>
                     <button class="btn btn-warning" style="width:100%; justify-content:center; font-weight:bold;" onclick="spinTabletGacha(${student.id})">
                         <i class="fa-solid fa-circle-play"></i> 投入代幣·啟動扭蛋
                     </button>
@@ -892,7 +903,6 @@
                     <div style="text-align:center; background:white; padding:20px; border-radius:8px; border:1px dashed #cbd5e1;">
                         <span style="font-size:40px; display:block; margin-bottom:6px;">🥚</span>
                         <span style="font-size:14px; font-weight:bold; color:#64748b;">您目前尚未擁有任何星光精靈</span>
-                        <p style="font-size:11px; color:#94a3b8; margin:4px 0 0 0;">趕快利用上方扭蛋機抽取您的第一隻戰鬥萌寵吧！</p>
                     </div>
                 `;
             } else {
@@ -961,12 +971,11 @@
                             <div class="action-card" onclick="feedStudentPet(${student.id})">
                                 <i class="fa-solid fa-cookie-bite" style="color:var(--success)"></i>
                                 <div style="font-weight:bold; font-size:13px;">晶石餵食培養</div>
-                                <div style="font-size:11px; color:#64748b;">隨機大滿足暴擊EXP！</div>
                             </div>
                             <div class="action-card" onclick="studentAttackBossAction(${student.id})">
                                 <i class="fa-solid fa-burst" style="color:var(--danger)"></i>
                                 <div style="font-weight:bold; font-size:13px;">派遣上陣突擊</div>
-                                <div style="font-size:11px; color:#64748b;">${student.hasActed ? '🔴 慢卻中' : '🟢 可攻擊'}</div>
+                                <div style="font-size:11px; color:#64748b;">${student.hasActed ? '🔴 冷卻中' : '🟢 可攻擊'}</div>
                             </div>
                         </div>
                     </div>
@@ -987,8 +996,7 @@
             if (idx > -1) { student.petList[idx].name = inputVal; }
 
             playSoundEffect('click');
-            refreshAllUI();
-            renderTabletView();
+            saveDatabase();
         }
 
         function changePetPersonality(sid, val) {
@@ -1001,8 +1009,7 @@
 
             playSoundEffect('click');
             autoCalculateTerritories();
-            refreshAllUI();
-            renderTabletView();
+            saveDatabase();
         }
 
         function donateToTeamPool(sid) {
@@ -1013,26 +1020,24 @@
             systemDatabase.teamPools[student.team] = (systemDatabase.teamPools[student.team] || 0) + 1;
             
             playSoundEffect('click');
-            refreshAllUI();
-            renderTabletView();
+            saveDatabase();
         }
 
         function withdrawFromTeamPool(sid) {
             const student = systemDatabase.students.find(s => s.id === sid);
             const currentPool = systemDatabase.teamPools[student.team] || 0;
-            if (currentPool < 1) { alert("❌ 目前小組能量水槽空空如也，快請組內高手分享吧！"); return; }
+            if (currentPool < 1) { alert("❌ 目前小組能量水槽空空如也！"); return; }
             
             systemDatabase.teamPools[student.team] -= 1;
             student.foodCount += 1;
             
             playSoundEffect('victory');
-            refreshAllUI();
-            renderTabletView();
+            saveDatabase();
         }
 
         function spinTabletGacha(sid) {
             const student = systemDatabase.students.find(s => s.id === sid);
-            if (student.tokens < 1) { alert("❌ 您的扭蛋代幣不足喔！請在課堂上積極發言賺取表現。"); return; }
+            if (student.tokens < 1) { alert("❌ 您的扭蛋代幣不足喔！"); return; }
             
             student.tokens -= 1;
             playSoundEffect('gacha');
@@ -1045,16 +1050,14 @@
             
             if(!student.petList) student.petList = [];
             student.petList.push(newPet);
-            
             if (!student.pet) { student.pet = newPet; }
 
             setTimeout(() => {
                 playSoundEffect('victory');
                 confetti({ particleCount: 30, spread: 50 });
-                alert(`🎰 扭蛋成功！\n獲得：【${tmpl.type}系】${tmpl.emoji} ${tmpl.name}！已安全保存至精靈背包。`);
+                alert(`🎰 扭蛋成功！\n獲得：【${tmpl.type}系】${tmpl.emoji} ${tmpl.name}！已同步至雲端。`);
                 autoCalculateTerritories();
-                refreshAllUI();
-                renderTabletView();
+                saveDatabase();
             }, 500);
         }
 
@@ -1066,8 +1069,7 @@
             playSoundEffect('click');
             
             autoCalculateTerritories();
-            refreshAllUI();
-            renderTabletView();
+            saveDatabase();
         }
 
         function feedStudentPet(sid) {
@@ -1093,7 +1095,7 @@
             if (isCrit) {
                 setTimeout(() => {
                     confetti({ particleCount: 15, colors: ['#eab308', '#a855f7'] });
-                    alert(`✨ 觸發操作變動暴擊！精靈產生【大滿足】！獲得超高 EXP +${baseExpGain}！`);
+                    alert(`✨ 獲得【大滿足】！經驗值超絕 +${baseExpGain}！`);
                 }, 50);
             }
 
@@ -1113,8 +1115,7 @@
             }
 
             autoCalculateTerritories();
-            refreshAllUI();
-            renderTabletView();
+            saveDatabase();
         }
 
         function evolveStudentPet(sid, nextId) {
@@ -1124,7 +1125,6 @@
             student.foodCount -= 10;
             
             const oldPetId = student.pet.petId;
-            
             student.pet.petId = tmpl.id;
             student.pet.name = tmpl.name;
             student.pet.emoji = tmpl.emoji;
@@ -1144,8 +1144,7 @@
             playSoundEffect('victory');
             confetti({ particleCount: 60 });
             autoCalculateTerritories();
-            refreshAllUI();
-            renderTabletView();
+            saveDatabase();
         }
 
         function studentAttackBossAction(sid) {
@@ -1174,14 +1173,7 @@
             if (student.damageContribution >= 300) { student.achievements.bossHunter = true; }
 
             playSoundEffect('hit');
-            const showcase = document.getElementById('bossShowcase');
-            if(showcase) {
-                showcase.classList.add('shake-active');
-                setTimeout(() => { showcase.classList.remove('shake-active'); }, 400);
-            }
-
-            refreshAllUI();
-            renderTabletView();
+            saveDatabase();
 
             setTimeout(() => {
                 alert(`💥 攻擊成功！造成魔王 ${dmg} 點物理重擊！\n${text}`);
@@ -1192,8 +1184,7 @@
                     setTimeout(() => {
                         alert(`🎉 凝聚全班的心智！成功擊潰強敵！全體同學獲得晶石x3、代幣x1！`);
                         systemDatabase.students.forEach(st => { st.foodCount += 3; st.tokens += 1; });
-                        refreshAllUI();
-                        renderTabletView();
+                        saveDatabase();
                     }, 400);
                 }
             }, 100);
@@ -1202,6 +1193,7 @@
         function triggerQRGeneration() {
             if (qrcodesGenerated) return;
             const printArea = document.getElementById('qrPrintArea');
+            if(!printArea) return;
             printArea.innerHTML = '';
             const currentBaseUrl = window.location.href.split('?')[0];
 
@@ -1226,32 +1218,21 @@
 
         window.onload = function() {
             initDatabase();
-            autoCalculateTerritories();
-            refreshAllUI();
-            renderTabletSeatGrid();
 
-            // 🌟 安全防護：解析網址是否有學生座號參數
             const urlParams = new URLSearchParams(window.location.search);
             const targetSeat = urlParams.get('seat');
             
             if (targetSeat) {
                 const seatNum = parseInt(targetSeat);
                 if (seatNum >= 1 && seatNum <= 30) {
-                    isStudentMode = true; // 啟動學生模式安全鎖
-                    
-                    // 1. 隱藏上方整個 Navbar 導覽列，只保留音樂按鈕給學生
+                    isStudentMode = true;
                     document.getElementById('topNavbar').style.display = 'none';
-                    
-                    // 2. 隱藏座號選擇鈕網格，讓學生無法切換成別人的座號
                     document.getElementById('tabletSeatGrid').style.display = 'none';
-                    
-                    // 3. 修改學生介面標題與提示，加上鎖定警示
                     document.getElementById('tabletHeaderTitle').innerHTML = `📲 9班戰寵載具 (已鎖定 ${seatNum} 號專屬帳號)`;
                     document.getElementById('tabletHeaderDesc').innerText = `已對應課堂機制，請專注培養您的專屬萌寵！`;
 
-                    // 4. 強制載入該座號的介面
                     switchTab('tablet');
-                    selectTabletSeat(seatNum);
+                    currentActiveTabletSeat = seatNum;
                 }
             }
         };
